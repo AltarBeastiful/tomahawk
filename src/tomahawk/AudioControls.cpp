@@ -247,8 +247,9 @@ AudioControls::onPlaybackStarted( const Tomahawk::result_ptr& result )
 
     qint64 duration = AudioEngine::instance()->currentTrackTotalTime();
 
-    if ( duration == -1 )
-        duration = result.data()->track()->duration() * 1000;
+    //TODO : check if result->track()->duration() is always valid
+    if ( duration <= 0 )
+        duration = result->track()->duration() * 1000;
 
     ui->seekSlider->setRange( 0, duration );
     ui->seekSlider->setValue( 0 );
