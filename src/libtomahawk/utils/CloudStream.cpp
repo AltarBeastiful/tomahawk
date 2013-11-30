@@ -55,7 +55,8 @@
 
 #include "utils/Logger.h"
 
-#include "resolvers/QtScriptResolver.h"
+#include "NetworkAccessManager.h"
+#include "resolvers/JSResolver.h"
 
 namespace
 {
@@ -71,7 +72,7 @@ CloudStream::CloudStream( QUrl& url,
                           const long length,
                           const QString& mimeType,
                           QVariantMap& headers,
-                          QtScriptResolver* scriptResolver,
+                          JSResolver* scriptResolver,
                           const QString & javascriptRefreshUrlFunction,
                           const QString& javascriptCallbackFunction,
                           const bool refreshUrlEachTime )
@@ -93,7 +94,7 @@ CloudStream::CloudStream( QUrl& url,
     , m_cacheState( CloudStream::BeginningCache )
     , m_tags( QVariantMap() )
 {
-    m_network = TomahawkUtils::nam();
+    m_network = Tomahawk::Utils::nam();
     connect( this, SIGNAL( cacheReadFinished() ), this, SLOT( precache() ) );
     m_tags["fileId"] = fileId;
     m_tags["mimetype"] = mimeType;
@@ -117,20 +118,20 @@ CloudStream::CheckCache( int start, int end )
 }
 
 void
-CloudStream::FillCache( int start, TagLib::ByteVector data )
+CloudStream::FillCache( uint start, TagLib::ByteVector data )
 {
-    for ( int i = 0; i < data.size(); ++i )
+    for ( uint i = 0; i < data.size(); ++i )
     {
         m_cache.set( start + i, data[i] );
     }
 }
 
 TagLib::ByteVector
-CloudStream::GetCached( int start, int end )
+CloudStream::GetCached( uint start, uint end )
 {
     const uint size = end - start + 1;
     TagLib::ByteVector ret( size );
-    for ( int i = 0; i < size; ++i )
+    for ( uint i = 0; i < size; ++i )
     {
         ret[i] = m_cache.get( start + i );
     }
@@ -370,7 +371,7 @@ CloudStream::refreshStreamUrl()
     tDebug( LOGINFO ) << "####### Cloudstream : refreshing streamUrl for " << m_filename;
     QString refreshUrl = QString( "resolver.%1( \"%2\" );" ).arg( m_javascriptRefreshUrlFunction )
             .arg( m_fileId );
-    QVariant response = m_scriptResolver->executeJavascript( refreshUrl );
+    QVariant response /*= m_scriptResolver->executeJavascript( refreshUrl )*/;
 
     if ( response.isNull() )
     {
@@ -386,7 +387,6 @@ CloudStream::refreshStreamUrl()
         request = response.toMap();
 
         urlString = request["url"].toString();
-
         m_headers = request["headers"].toMap();
     }
     else

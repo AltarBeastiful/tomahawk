@@ -45,10 +45,16 @@ public:
     Q_INVOKABLE QString md5( const QByteArray& input );
 
     Q_INVOKABLE void addCustomUrlHandler( const QString& protocol, const QString& callbackFuncName, const QString& isAsynchronous = "false" );
-    Q_INVOKABLE void reportStreamUrl( const QString& qid, const QString& streamUrl );
+    Q_INVOKABLE void reportStreamUrl( const QString& qid, const QString& streamUrl, const QVariantMap& headers = QVariantMap());
 
     Q_INVOKABLE QByteArray base64Encode( const QByteArray& input );
     Q_INVOKABLE QByteArray base64Decode( const QByteArray& input );
+
+    Q_INVOKABLE void readCloudFile( const QString& fileName, const QString& fileId, const QString& sizeS,
+                       const QString& mime_type, const QVariant& requestJS, const QString& javascriptCallbackFunction,
+                       const QString& javascriptRefreshUrlFunction = QString(), const bool refreshUrlEachTime = false );
+
+    Q_INVOKABLE void requestWebView(const QString& varName, const QString& url);
 
     void customIODeviceFactory( const Tomahawk::result_ptr& result,
                                 boost::function< void( QSharedPointer< QIODevice >& ) > callback ); // async
@@ -77,10 +83,13 @@ public slots:
 private slots:
     void tracksAdded( const QList<Tomahawk::query_ptr>& tracks, const Tomahawk::ModelMode, const Tomahawk::collection_ptr& collection );
     void pltemplateTracksLoadedForUrl( const QString& url, const Tomahawk::playlisttemplate_ptr& pltemplate );
+    void onTagReady(QVariantMap &tags, const QString&);
 
 private:
     Tomahawk::query_ptr parseTrack( const QVariantMap& track );
-    void returnStreamUrl( const QString& streamUrl, boost::function< void( QSharedPointer< QIODevice >& ) > callback );
+    void returnStreamUrl( const QString& streamUrl,
+                          boost::function< void( QSharedPointer< QIODevice >& ) > callback,
+                          const QVariantMap& headers );
 
     QString m_scriptPath, m_urlCallback;
     QHash< QString, boost::function< void( QSharedPointer< QIODevice >& ) > > m_streamCallbacks;

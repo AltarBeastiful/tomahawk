@@ -30,6 +30,7 @@
 #include "utils/Closure.h"
 #include "utils/NetworkAccessManager.h"
 #include "utils/Logger.h"
+#include "utils/CloudStream.h"
 
 #include "config.h"
 #include "JSResolver_p.h"
@@ -42,6 +43,8 @@
 #include <QFileInfo>
 #include <QtCrypto>
 #include <QWebFrame>
+#include <QWebView>
+#include <qjson/serializer.h>
 
 using namespace Tomahawk;
 
@@ -489,28 +492,45 @@ JSResolverHelper::customIODeviceFactory( const Tomahawk::result_ptr& result,
         QString getUrl = QString( "Tomahawk.resolver.instance.%1( '%2' );" ).arg( m_urlCallback )
                                                                             .arg( origResultUrl );
 
-        QString urlStr = m_resolver->d_func()->engine->mainFrame()->evaluateJavaScript( getUrl ).toString();
+        QString urlStr;
+        QVariantMap headers;
+        QVariant jsResult = m_resolver->d_func()->engine->mainFrame()->evaluateJavaScript( getUrl );
 
-        returnStreamUrl( urlStr, callback );
+        if ( jsResult.type() == QVariant::String )
+        {
+            urlStr = jsResult.toString();
+        }
+        else if ( jsResult.type() == QVariant::Map )
+        {
+            QVariantMap request = jsResult.toMap();
+
+            urlStr = request["url"].toString();
+            headers = request["headers"].toMap();
+        }
+
+        returnStreamUrl( urlStr, callback, headers );
     }
 }
 
 
 void
 JSResolverHelper::reportStreamUrl( const QString& qid,
-                                         const QString& streamUrl )
+                                         const QString& streamUrl,
+                                         const QVariantMap& headers )
 {
     if ( !m_streamCallbacks.contains( qid ) )
         return;
 
     boost::function< void( QSharedPointer< QIODevice >& ) > callback = m_streamCallbacks.take( qid );
 
-    returnStreamUrl( streamUrl, callback );
+    returnStreamUrl( streamUrl, callback, headers );
 }
 
 
 void
-JSResolverHelper::returnStreamUrl( const QString& streamUrl, boost::function< void( QSharedPointer< QIODevice >& ) > callback )
+JSResolverHelper::returnStreamUrl( const QString& streamUrl,
+                                         boost::function< void( QSharedPointer< QIODevice >& ) > callback,
+                                         const QVariantMap& headers)
 {
     QSharedPointer< QIODevice > sp;
     if ( streamUrl.isEmpty() )
@@ -521,10 +541,83 @@ JSResolverHelper::returnStreamUrl( const QString& streamUrl, boost::function< vo
 
     QUrl url = QUrl::fromEncoded( streamUrl.toUtf8() );
     QNetworkRequest req( url );
+
+    foreach ( const QString& headerName, headers.keys() )
+    {
+        req.setRawHeader( headerName.toLocal8Bit(), headers[headerName].toString().toLocal8Bit() );
+    }
+
     tDebug() << "Creating a QNetowrkReply with url:" << req.url().toString();
     QNetworkReply* reply = Tomahawk::Utils::nam()->get( req );
 
     //boost::functions cannot accept temporaries as parameters
     sp = QSharedPointer< QIODevice >( reply, &QObject::deleteLater );
     callback( sp );
+}
+
+
+void
+JSResolverHelper::readCloudFile(const QString& fileName, const QString& fileId,
+                                      const QString& sizeS, const QString& mime_type,
+                                      const QVariant& requestJS, const QString& javascriptCallbackFunction,
+                                      const QString& javascriptRefreshUrlFunction, const bool refreshUrlEachTime)
+{
+
+    QVariantMap request;
+    QUrl download_url;
+    QVariantMap headers;
+    long size = sizeS.toLong();
+    QString urlString;
+
+    if ( requestJS.type() == QVariant::Map )
+    {
+        request = requestJS.toMap();
+
+        urlString = request["url"].toString();
+        headers = request["headers"].toMap();
+    }
+    else
+    {
+        urlString = requestJS.toString();
+    }
+
+    download_url.setUrl( urlString );
+
+    tDebug( LOGINFO ) << "#### ReadCloudFile : Loading tags of " << fileName << " from " << download_url.toString() << " which have id " << fileId;
+
+
+    CloudStream* stream = new CloudStream( download_url, fileName, fileId,
+                                           size, mime_type, headers, m_resolver,
+                                           javascriptRefreshUrlFunction, javascriptCallbackFunction, refreshUrlEachTime );
+
+    connect( stream, SIGNAL( tagsReady(QVariantMap &, const QString& ) ), this, SLOT( onTagReady( QVariantMap&, const QString& ) ) );
+    stream->precache();
+}
+
+
+void
+JSResolverHelper::onTagReady( QVariantMap &tags, const QString& javascriptCallbackFunction )
+{
+    QJson::Serializer serializer;
+    QByteArray json = serializer.serialize( tags );
+
+    tDebug() << "#### ReadCloudFile : Sending tags to js : " << json;
+
+    QString getUrl = QString( "Tomahawk.resolver.instance.%1( %2 );" ).arg( javascriptCallbackFunction )
+            .arg( QString(json) );
+
+    m_resolver->d_func()->engine->mainFrame()->evaluateJavaScript( getUrl );
+}
+
+
+void
+JSResolverHelper::requestWebView(const QString &varName, const QString &url)
+{
+    QWebView *view = new QWebView();
+    view->load(QUrl(url));
+
+    //TODO: move this to JS.
+    view->setWindowModality(Qt::ApplicationModal);
+
+   m_resolver->d_func()->engine->mainFrame()->addToJavaScriptWindowObject(varName, view);
 }

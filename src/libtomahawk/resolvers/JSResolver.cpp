@@ -90,6 +90,8 @@ JSResolver::JSResolver( const QString& scriptPath, const QStringList& additional
     // set the icon, if we launch properly we'll get the icon the resolver reports
     d->icon = TomahawkUtils::defaultPixmap( TomahawkUtils::DefaultResolver, TomahawkUtils::Original, QSize( 128, 128 ) );
 
+    connect( d->signalMapper, SIGNAL( mapped ( const QString & ) ), this, SLOT( executeJavascript(const QString &) ) );
+
     if ( !QFile::exists( filePath() ) )
     {
         tLog() << Q_FUNC_INFO << "Failed loading JavaScript resolver:" << scriptPath;
@@ -162,86 +164,6 @@ JSResolver::weight() const
     return d->weight;
 }
 
-
-void
-QtScriptResolverHelper::readCloudFile(const QString& fileName, const QString& fileId,
-                                      const QString& sizeS, const QString& mime_type,
-                                      const QVariant& requestJS, const QString& javascriptCallbackFunction,
-                                      const QString& javascriptRefreshUrlFunction, const bool refreshUrlEachTime)
-{
-
-    QVariantMap request;
-    QUrl download_url;
-    QVariantMap headers;
-    long size = sizeS.toLong();
-    QString urlString;
-
-    if ( requestJS.type() == QVariant::Map )
-    {
-        request = requestJS.toMap();
-
-        urlString = request["url"].toString();
-
-        headers = request["headers"].toMap();
-    }
-    else
-    {
-        urlString = requestJS.toString();
-    }
-
-    download_url.setUrl( urlString );
-
-    tDebug( LOGINFO ) << "#### ReadCloudFile : Loading tags of " << fileName << " from " << download_url.toString() << " which have id " << fileId;
-
-
-    CloudStream* stream = new CloudStream( download_url, fileName, fileId,
-                                           size, mime_type, headers, m_resolver,
-                                           javascriptRefreshUrlFunction, javascriptCallbackFunction, refreshUrlEachTime );
-
-    connect( stream, SIGNAL( tagsReady(QVariantMap &, const QString& ) ), this, SLOT( onTagReady( QVariantMap&, const QString& ) ) );
-    stream->precache();
-}
-
-
-void
-QtScriptResolverHelper::onTagReady( QVariantMap &tags, const QString& javascriptCallbackFunction )
-{
-
-    QJson::Serializer serializer;
-
-    QByteArray json = serializer.serialize( tags );
-
-    tDebug() << "#### ReadCloudFile : Sending tags to js : " << json;
-
-    QString getUrl = QString( "Tomahawk.resolver.instance.%1( %2 );" ).arg( javascriptCallbackFunction )
-            .arg( QString(json) );
-
-    m_resolver->m_engine->mainFrame()->evaluateJavaScript( getUrl );
-}
-
-
-void
-QtScriptResolverHelper::requestWebView(const QString &varName, const QString &url)
-{
-    QWebView *view = new QWebView();
-    view->load(QUrl(url));
-
-    //TODO: move this to JS.
-    view->setWindowModality(Qt::ApplicationModal);
-
-    m_resolver->m_engine->mainFrame()->addToJavaScriptWindowObject(varName, view);
-}
-
-void
-QtScriptResolverHelper::showWebInspector()
-{
-    QWebInspector *inspector = new QWebInspector;
-    inspector->setPage(m_resolver->m_engine);
-    inspector->show();
-}
-
-
-void
 unsigned int
 JSResolver::timeout() const
 {
@@ -904,8 +826,10 @@ JSResolver::fillDataInWidgets( const QVariantMap& data )
 }
 
 
-void QtScriptResolver::connectUISlots( QWidget* widget, const QVariantList &connectionsList )
+void JSResolver::connectUISlots( QWidget* widget, const QVariantList &connectionsList )
 {
+    Q_D( JSResolver );
+
     foreach( const QVariant& connection, connectionsList )
     {
         QVariantMap params = connection.toMap();
@@ -920,13 +844,12 @@ void QtScriptResolver::connectUISlots( QWidget* widget, const QVariantList &conn
             if( iSignal != -1 ){
 
                 QMetaMethod signal = widget->metaObject()->method( iSignal );
-                QMetaMethod slot = m_signalMapper->metaObject()->method( m_signalMapper
+                QMetaMethod slot = d->signalMapper->metaObject()->method( d->signalMapper
                                                                          ->metaObject()->
                                                                          indexOfSlot("map()") );
 
-                connect( widget , signal , m_signalMapper, slot );
-                //TODO : check if mapping were previously done on widget, if you set the same widget twice the first mapping will be replaced.
-                m_signalMapper->setMapping( widget, params["javascriptCallback"].toString() );
+                connect( widget , signal , d->signalMapper, slot );
+                d->signalMapper->setMapping( widget, params["javascriptCallback"].toString() );
             }
         }
     }
@@ -1079,8 +1002,13 @@ JSResolver::resolverCollections()
     // Then when there's callbacks from a resolver, it sends source name, collection id
     // + data.
 }
-QVariant QtScriptResolver::executeJavascript(const QString &js)
+
+
+QVariant
+JSResolver::executeJavascript(const QString &js)
 {
-    return m_engine->mainFrame()->evaluateJavaScript( RESOLVER_LEGACY_CODE + js );
+    Q_D( JSResolver );
+
+    return d->engine->mainFrame()->evaluateJavaScript( RESOLVER_LEGACY_CODE + js );
 }
 

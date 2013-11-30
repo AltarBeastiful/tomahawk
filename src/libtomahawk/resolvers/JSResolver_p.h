@@ -22,6 +22,8 @@
 #ifndef JSRESOLVER_P_H
 #define JSRESOLVER_P_H
 
+#include <QSignalMapper>
+
 #include "JSResolver.h"
 
 #include "JSResolverHelper.h"
@@ -37,6 +39,8 @@ public:
         , error( Tomahawk::ExternalResolver::NoError )
         , resolverHelper( new JSResolverHelper( scriptPath, q ) )
         , requiredScriptPaths( additionalScriptPaths )
+        , signalMapper( new QSignalMapper(q) )
+
     {
     }
     JSResolver* q_ptr;
@@ -49,6 +53,7 @@ private:
     QPixmap icon;
     unsigned int weight, timeout;
     Tomahawk::ExternalResolverGui::Capabilities capabilities;
+    QSignalMapper* signalMapper;
 
     bool ready;
     bool stopped;

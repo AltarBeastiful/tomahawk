@@ -22,14 +22,14 @@
 #include <QList>
 #include <QSslError>
 #include <QUrl>
-#include <QMap>;
+#include <QMap>
 
 
 #include <google/sparsetable>
 #include <taglib/tiostream.h>
 
 class QNetworkAccessManager;
-class QtScriptResolver;
+class JSResolver;
 class QNetworkReply;
 
 class CloudStream : public QObject, public TagLib::IOStream
@@ -42,7 +42,7 @@ public:
                  const long length,
                  const QString& mimeType,
                  QVariantMap& headers,
-                 QtScriptResolver *scriptResolver,
+                 JSResolver *scriptResolver,
                  const QString& javascriptRefreshUrlFunction,
                  const QString& javascriptCallbackFunction,
                  const bool refreshUrlEachTime );
@@ -88,8 +88,8 @@ signals:
 
 private:
     bool CheckCache( int start, int end );
-    void FillCache( int start, TagLib::ByteVector data );
-    TagLib::ByteVector GetCached( int start, int end );
+    void FillCache(uint start, TagLib::ByteVector data );
+    TagLib::ByteVector GetCached(uint start, uint end );
 
     enum ReadingCacheState
     {
@@ -120,7 +120,7 @@ private:
     int m_cursor;
     QNetworkAccessManager* m_network;
     QNetworkReply* m_reply;
-    QtScriptResolver* m_scriptResolver;
+    JSResolver* m_scriptResolver;
 
     google::sparsetable<char> m_cache;
     int m_num_requests;
