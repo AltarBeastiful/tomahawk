@@ -50,6 +50,8 @@ public:
     Q_INVOKABLE QByteArray base64Encode( const QByteArray& input );
     Q_INVOKABLE QByteArray base64Decode( const QByteArray& input );
 
+    Q_INVOKABLE void requestWebView(const QString& varName, const QString& url);
+
     void customIODeviceFactory( const Tomahawk::result_ptr& result,
                                 boost::function< void( QSharedPointer< QIODevice >& ) > callback ); // async
 

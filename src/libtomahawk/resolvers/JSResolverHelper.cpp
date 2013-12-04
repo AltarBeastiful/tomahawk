@@ -42,6 +42,7 @@
 #include <QFileInfo>
 #include <QtCrypto>
 #include <QWebFrame>
+#include <QWebView>
 
 using namespace Tomahawk;
 
@@ -527,4 +528,15 @@ JSResolverHelper::returnStreamUrl( const QString& streamUrl, boost::function< vo
     //boost::functions cannot accept temporaries as parameters
     sp = QSharedPointer< QIODevice >( reply, &QObject::deleteLater );
     callback( sp );
+}
+void
+JSResolverHelper::requestWebView(const QString &varName, const QString &url)
+{
+    QWebView *view = new QWebView();
+    view->load(QUrl(url));
+
+    //TODO: move this to JS.
+    view->setWindowModality(Qt::ApplicationModal);
+
+   m_resolver->d_func()->engine->mainFrame()->addToJavaScriptWindowObject(varName, view);
 }
