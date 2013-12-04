@@ -45,7 +45,7 @@ public:
     Q_INVOKABLE QString md5( const QByteArray& input );
 
     Q_INVOKABLE void addCustomUrlHandler( const QString& protocol, const QString& callbackFuncName, const QString& isAsynchronous = "false" );
-    Q_INVOKABLE void reportStreamUrl( const QString& qid, const QString& streamUrl );
+    Q_INVOKABLE void reportStreamUrl( const QString& qid, const QString& streamUrl, const QVariantMap& headers = QVariantMap() );
     Q_INVOKABLE void addCustomUrlTranslator( const QString& protocol, const QString& callbackFuncName, const QString& isAsynchronous = "false" );
     Q_INVOKABLE void reportUrlTranslation( const QString& qid, const QString& streamUrl );
 
@@ -85,7 +85,9 @@ private slots:
 
 private:
     Tomahawk::query_ptr parseTrack( const QVariantMap& track );
-    void returnStreamUrl( const QString& streamUrl, boost::function< void( QSharedPointer< QIODevice >& ) > callback );
+    void returnStreamUrl( const QString& streamUrl,
+                          boost::function< void( QSharedPointer< QIODevice >& ) > callback,
+                          const QVariantMap& headers );
     void returnUrlTranslation( const QString& streamUrl, boost::function< void( const QString& ) > callback );
 
     QString m_scriptPath, m_urlCallback, m_urlTranslator;
