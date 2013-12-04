@@ -51,6 +51,7 @@
 #include <QNetworkReply>
 #include <QMetaProperty>
 #include <QCryptographicHash>
+#include <QSignalMapper>
 #include <QSslError>
 #include <QWebFrame>
 
@@ -80,6 +81,8 @@ JSResolver::JSResolver( const QString& scriptPath, const QStringList& additional
 
     // set the icon, if we launch properly we'll get the icon the resolver reports
     d->icon = TomahawkUtils::defaultPixmap( TomahawkUtils::DefaultResolver, TomahawkUtils::Original, QSize( 128, 128 ) );
+
+    connect( d->signalMapper, SIGNAL( mapped ( const QString & ) ), this, SLOT( executeJavascript(const QString &) ) );
 
     if ( !QFile::exists( filePath() ) )
     {
@@ -772,9 +775,11 @@ JSResolver::loadDataFromWidgets()
         QString widgetName = data["widget"].toString();
         QWidget* widget= d->configWidget.data()->findChild<QWidget*>( widgetName );
 
-        QVariant value = widgetData( widget, data["property"].toString() );
-
-        saveData[ data["name"].toString() ] = value;
+        if( data.contains("property") )
+        {
+            QVariant value = widgetData( widget, data["property"].toString() );
+            saveData[ data["name"].toString() ] = value;
+        }
     }
 
     return saveData;
@@ -788,7 +793,9 @@ JSResolver::fillDataInWidgets( const QVariantMap& data )
 
     foreach(const QVariant& dataWidget, d->dataWidgets)
     {
-        QString widgetName = dataWidget.toMap()["widget"].toString();
+        QVariantMap mapDataWidget = dataWidget.toMap();
+        QString widgetName = mapDataWidget["widget"].toString();
+
         QWidget* widget= d->configWidget.data()->findChild<QWidget*>( widgetName );
         if( !widget )
         {
@@ -796,11 +803,44 @@ JSResolver::fillDataInWidgets( const QVariantMap& data )
             Q_ASSERT(false);
             return;
         }
+        if( mapDataWidget.contains("property") )
+        {
+            QString propertyName = mapDataWidget["property"].toString();
+            QString name = mapDataWidget["name"].toString();
 
-        QString propertyName = dataWidget.toMap()["property"].toString();
-        QString name = dataWidget.toMap()["name"].toString();
+            setWidgetData( data[ name ], widget, propertyName );
+        }
+        if( mapDataWidget.contains("connections") )
+        {
+            connectUISlots( widget, mapDataWidget["connections"].toList() );
+        }
+    }
+}
 
-        setWidgetData( data[ name ], widget, propertyName );
+
+void JSResolver::connectUISlots( QWidget* widget, const QVariantList &connectionsList )
+{
+    Q_D( JSResolver );
+
+    foreach( const QVariant& connection, connectionsList )
+    {
+        QVariantMap params = connection.toMap();
+        if( params.contains("signal") && params.contains("javascriptCallback") )
+        {
+            int iSignal = widget->metaObject()->indexOfSignal( params["signal"]
+                                                                .toString()
+                                                                .toUtf8()
+                                                                .constData() );
+            if( iSignal != -1 ){
+                QMetaMethod signal = widget->metaObject()->method( iSignal );
+                QMetaMethod slot = d->signalMapper->metaObject()->method( d->signalMapper
+                                                                           ->metaObject()
+                                                                           ->indexOfSlot("map()") );
+
+                connect( widget , signal , d->signalMapper, slot );
+                d->signalMapper->setMapping( widget, params["javascriptCallback"].toString() );
+            }
+        }
     }
 }
 
@@ -951,3 +991,13 @@ JSResolver::resolverCollections()
     // Then when there's callbacks from a resolver, it sends source name, collection id
     // + data.
 }
+
+
+QVariant
+JSResolver::executeJavascript(const QString &js)
+{
+    Q_D( JSResolver );
+
+    return d->engine->mainFrame()->evaluateJavaScript( RESOLVER_LEGACY_CODE + js );
+}
+

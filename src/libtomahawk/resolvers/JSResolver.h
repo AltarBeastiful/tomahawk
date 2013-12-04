@@ -77,6 +77,7 @@ signals:
 
 private slots:
     void onCollectionIconFetched();
+    QVariant executeJavascript(const QString& );
 
 private:
     void init();
@@ -88,6 +89,7 @@ private:
     void fillDataInWidgets( const QVariantMap& data );
     void onCapabilitiesChanged( Capabilities capabilities );
     void loadCollections();
+    void connectUISlots( QWidget*, const QVariantList & );
 
     // encapsulate javascript calls
     QVariantMap resolverSettings();
