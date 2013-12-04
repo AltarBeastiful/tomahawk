@@ -490,28 +490,45 @@ JSResolverHelper::customIODeviceFactory( const Tomahawk::result_ptr& result,
         QString getUrl = QString( "Tomahawk.resolver.instance.%1( '%2' );" ).arg( m_urlCallback )
                                                                             .arg( origResultUrl );
 
-        QString urlStr = m_resolver->d_func()->engine->mainFrame()->evaluateJavaScript( getUrl ).toString();
+        QString urlStr;
+        QVariantMap headers;
+        QVariant jsResult = m_resolver->d_func()->engine->mainFrame()->evaluateJavaScript( getUrl );
 
-        returnStreamUrl( urlStr, callback );
+        if ( jsResult.type() == QVariant::String )
+        {
+            urlStr = jsResult.toString();
+        }
+        else if ( jsResult.type() == QVariant::Map )
+        {
+            QVariantMap request = jsResult.toMap();
+
+            urlStr = request["url"].toString();
+            headers = request["headers"].toMap();
+        }
+
+        returnStreamUrl( urlStr, callback, headers );
     }
 }
 
 
 void
 JSResolverHelper::reportStreamUrl( const QString& qid,
-                                         const QString& streamUrl )
+                                         const QString& streamUrl,
+                                         const QVariantMap& headers )
 {
     if ( !m_streamCallbacks.contains( qid ) )
         return;
 
     boost::function< void( QSharedPointer< QIODevice >& ) > callback = m_streamCallbacks.take( qid );
 
-    returnStreamUrl( streamUrl, callback );
+    returnStreamUrl( streamUrl, callback, headers );
 }
 
 
 void
-JSResolverHelper::returnStreamUrl( const QString& streamUrl, boost::function< void( QSharedPointer< QIODevice >& ) > callback )
+JSResolverHelper::returnStreamUrl( const QString& streamUrl,
+                                         boost::function< void( QSharedPointer< QIODevice >& ) > callback,
+                                         const QVariantMap& headers )
 {
     QSharedPointer< QIODevice > sp;
     if ( streamUrl.isEmpty() )
@@ -522,6 +539,12 @@ JSResolverHelper::returnStreamUrl( const QString& streamUrl, boost::function< vo
 
     QUrl url = QUrl::fromEncoded( streamUrl.toUtf8() );
     QNetworkRequest req( url );
+
+    foreach ( const QString& headerName, headers.keys() )
+    {
+        req.setRawHeader( headerName.toUtf8(), headers[headerName].toString().toUtf8() );
+    }
+
     tDebug() << "Creating a QNetowrkReply with url:" << req.url().toString();
     QNetworkReply* reply = Tomahawk::Utils::nam()->get( req );
 
