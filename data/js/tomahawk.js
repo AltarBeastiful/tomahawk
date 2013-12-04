@@ -311,6 +311,35 @@ Tomahawk.asyncRequest = function (url, callback, extraHeaders, options) {
     xmlHttpRequest.send(opt.data || null);
 };
 
+/*
+ * Bind the function to be executed in the scope of the object oThis.
+ * Any copyright is dedicated to the Public Domain.
+ * Source : http://developer.mozilla.org/en-US/docs/JavaScript/Reference/Global_Objects/Function/bind#Compatibility
+ */
+if (!Function.prototype.bind) {
+  Function.prototype.bind = function (oThis) {
+    if (typeof this !== "function") {
+      // closest thing possible to the ECMAScript 5 internal IsCallable function
+      throw new TypeError("Function.prototype.bind - what is trying to be bound is not callable");
+    }
+ 
+    var aArgs = Array.prototype.slice.call(arguments, 1),
+        fToBind = this,
+        fNOP = function () {},
+        fBound = function () {
+          return fToBind.apply(this instanceof fNOP && oThis
+                                 ? this
+                                 : oThis,
+                               aArgs.concat(Array.prototype.slice.call(arguments)));
+        };
+ 
+    fNOP.prototype = this.prototype;
+    fBound.prototype = new fNOP();
+ 
+    return fBound;
+  };
+}
+
 Tomahawk.sha256 = Tomahawk.sha256 || CryptoJS.SHA256;
 
 // some aliases
