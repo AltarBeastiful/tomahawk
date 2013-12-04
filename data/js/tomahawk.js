@@ -253,10 +253,11 @@ Tomahawk.valueForSubNode = function (node, tag) {
  * Do a synchronous HTTP(S) request. For further options see
  * Tomahawk.asyncRequest
  */
-Tomahawk.syncRequest = function (url, extraHeaders, options) {
+Tomahawk.syncRequest = function (url, extraHeaders, options, data) {
     // unpack options
     var opt = options || {};
     var method = opt.method || 'GET';
+    var data_p = data || null;
 
     var xmlHttpRequest = new XMLHttpRequest();
     xmlHttpRequest.open(method, url, false, opt.username, opt.password);
@@ -265,7 +266,7 @@ Tomahawk.syncRequest = function (url, extraHeaders, options) {
             xmlHttpRequest.setRequestHeader(headerName, extraHeaders[headerName]);
         }
     }
-    xmlHttpRequest.send(null);
+    xmlHttpRequest.send(data_p);
     if (xmlHttpRequest.status == 200) {
 		return xmlHttpRequest.responseText;
     } else {
@@ -284,10 +285,11 @@ Tomahawk.syncRequest = function (url, extraHeaders, options) {
  *  - password: The password for HTTP Basic Auth
  *  - errorHandler: callback called if the request was not completed
  */
-Tomahawk.asyncRequest = function (url, callback, extraHeaders, options) {
+Tomahawk.asyncRequest = function (url, callback, extraHeaders, options, data) {
     // unpack options
     var opt = options || {};
     var method = opt.method || 'GET';
+    var data_p = data || null;
 
     var xmlHttpRequest = new XMLHttpRequest();
     xmlHttpRequest.open(method, url, true, opt.username, opt.password);
@@ -307,7 +309,7 @@ Tomahawk.asyncRequest = function (url, callback, extraHeaders, options) {
             }
         }
     };
-    xmlHttpRequest.send(null);
+    xmlHttpRequest.send(data_p);
 };
 
 /*
