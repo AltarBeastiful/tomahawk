@@ -2,6 +2,7 @@ PROJECT( tomahawk )
 CMAKE_MINIMUM_REQUIRED( VERSION 2.8.6 )
 SET( CMAKE_MODULE_PATH  "${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules" )
 CMAKE_POLICY(SET CMP0017 NEW)
+set(QT_QMAKE_EXECUTABLE /usr/bin/qmake-qt4)
 
 IF ( CMAKE_VERSION VERSION_EQUAL 2.8.12 OR CMAKE_VERSION GREATER 2.8.12 )
 CMAKE_POLICY(SET CMP0022 NEW)
@@ -237,7 +238,7 @@ macro_log_feature(CLucene_FOUND "CLucene" "The open-source, C++ search engine" "
 macro_optional_find_package(QJSON 0.8.1)
 macro_log_feature(QJSON_FOUND "QJson" "Qt library that maps JSON data to QVariant objects" "http://qjson.sf.net" TRUE "" "libqjson is used for encoding communication between Tomahawk instances")
 
-macro_optional_find_package(Taglib 1.6.0)
+macro_optional_find_package(Taglib 1.8.0)
 macro_log_feature(TAGLIB_FOUND "TagLib" "Audio Meta-Data Library" "http://developer.kde.org/~wheeler/taglib.html" TRUE "" "taglib is needed for reading meta data from audio files")
 include( CheckTagLibFileName )
 check_taglib_filename( COMPLEX_TAGLIB_FILENAME )
