@@ -45,7 +45,6 @@ public:
                  JSResolver *scriptResolver,
                  const QString& javascriptCallbackFunction );
 
-    //Taglib::IOStream;
     virtual TagLib::FileName name() const;
     virtual TagLib::ByteVector readBlock( ulong length );
     virtual void writeBlock( const TagLib::ByteVector& );

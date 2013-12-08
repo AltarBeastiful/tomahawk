@@ -149,7 +149,6 @@ CloudStream::precache()
     // Ideally, we would use bytes=0-655364,-8096 but Google Drive does not seem
     // to support multipart byte ranges yet so we have to make do with two
     // requests.
-    tDebug( LOGINFO ) << "#### CloudStream : Precaching from :" << m_filename;
 
     switch( m_cacheState )
     {
@@ -176,14 +175,14 @@ CloudStream::precache()
             QString mimeType = m_tags["mimetype"].toString();
             boost::scoped_ptr<TagLib::File> tag;
 
-            if ( mimeType == "audio/mpeg" ) // && title.endsWith(".mp3"))
+            if ( mimeType == "audio/mpeg" )
             {
                 tag.reset(new TagLib::MPEG::File(
                               this,  // Takes ownership.
                               TagLib::ID3v2::FrameFactory::instance(),
                               TagLib::AudioProperties::Accurate));
             }
-            else if ( mimeType == "audio/mp4" || ( mimeType == "audio/mpeg" ) ) //  && title.endsWith(".m4a")))
+            else if ( mimeType == "audio/mp4" || ( mimeType == "audio/mpeg" ) )
             {
                 tag.reset( new TagLib::MP4::File( this, true, TagLib::AudioProperties::Accurate ) );
             }
@@ -274,15 +273,13 @@ CloudStream::readBlock( ulong length )
 
     QNetworkRequest request = QNetworkRequest( m_url );
 
-    //settings of specials OAuth (1 or 2) headers
     foreach ( const QString& headerName, m_headers.keys() )
     {
-        request.setRawHeader( headerName.toLocal8Bit(), m_headers[headerName].toString().toLocal8Bit() );
-
+        request.setRawHeader( headerName.toUtf8(), m_headers[headerName].toUtf8() );
     }
-
     request.setRawHeader( "Range", QString( "bytes=%1-%2" ).arg( start ).arg( end ).toUtf8() );
     request.setAttribute( QNetworkRequest::CacheLoadControlAttribute, QNetworkRequest::AlwaysNetwork );
+
     // The Ubuntu One server applies the byte range to the gzipped data, rather
     // than the raw data so we must disable compression.
     if ( m_url.host() == "files.one.ubuntu.com" )
