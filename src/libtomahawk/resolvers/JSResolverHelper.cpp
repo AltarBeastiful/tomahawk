@@ -30,6 +30,7 @@
 #include "utils/Closure.h"
 #include "utils/NetworkAccessManager.h"
 #include "utils/Logger.h"
+#include "utils/CloudStream.h"
 
 #include "config.h"
 #include "JSResolver_p.h"
@@ -43,6 +44,7 @@
 #include <QtCrypto>
 #include <QWebFrame>
 #include <QWebView>
+#include <qjson/serializer.h>
 
 using namespace Tomahawk;
 
@@ -552,6 +554,58 @@ JSResolverHelper::returnStreamUrl( const QString& streamUrl,
     sp = QSharedPointer< QIODevice >( reply, &QObject::deleteLater );
     callback( sp );
 }
+
+
+void
+JSResolverHelper::readCloudFile( const QString& fileName, const QString& fileId,
+                                      const QString& sizeS, const QString& mime_type,
+                                      const QVariant& requestJS, const QString& javascriptCallbackFunction )
+{
+    QVariantMap request;
+    QUrl download_url;
+    QVariantMap headers;
+    long size = sizeS.toLong();
+    QString urlString;
+
+    if ( requestJS.type() == QVariant::Map )
+    {
+        request = requestJS.toMap();
+
+        urlString = request["url"].toString();
+        headers = request["headers"].toMap();
+    }
+    else
+    {
+        urlString = requestJS.toString();
+    }
+
+    download_url.setUrl( urlString );
+
+    tDebug( LOGINFO ) << "Indexing " << fileName << " from " << download_url.host();
+
+    CloudStream* stream = new CloudStream( download_url, fileName, fileId, size,
+                                           mime_type, headers, m_resolver, javascriptCallbackFunction );
+
+    connect( stream, SIGNAL( tagsReady(QVariantMap &, const QString& ) ), this, SLOT( onTagReady( QVariantMap&, const QString& ) ) );
+    stream->precache();
+}
+
+
+void
+JSResolverHelper::onTagReady( QVariantMap &tags, const QString& javascriptCallbackFunction )
+{
+    QJson::Serializer serializer;
+    QByteArray json = serializer.serialize( tags );
+
+    tDebug() << "#### ReadCloudFile : Sending tags to js : " << json;
+
+    QString getUrl = QString( "Tomahawk.resolver.instance.%1( %2 );" ).arg( javascriptCallbackFunction )
+            .arg( QString(json) );
+
+    m_resolver->d_func()->engine->mainFrame()->evaluateJavaScript( getUrl );
+}
+
+
 void
 JSResolverHelper::requestWebView(const QString &varName, const QString &url)
 {
