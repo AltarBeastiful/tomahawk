@@ -74,8 +74,6 @@ public:
         return m_num_requests_in_error;
     }
 
-    bool refreshStreamUrl();
-
 public slots:
     // Use educated guess to request the bytes that TagLib will probably want.
     void precache();
