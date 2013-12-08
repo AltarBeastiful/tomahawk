@@ -530,7 +530,7 @@ JSResolverHelper::reportStreamUrl( const QString& qid,
 void
 JSResolverHelper::returnStreamUrl( const QString& streamUrl,
                                          boost::function< void( QSharedPointer< QIODevice >& ) > callback,
-                                         const QVariantMap& headers)
+                                         const QVariantMap& headers )
 {
     QSharedPointer< QIODevice > sp;
     if ( streamUrl.isEmpty() )
@@ -607,13 +607,13 @@ JSResolverHelper::onTagReady( QVariantMap &tags, const QString& javascriptCallba
 
 
 void
-JSResolverHelper::requestWebView(const QString &varName, const QString &url)
+JSResolverHelper::requestWebView( const QString &varName, const QString &url )
 {
     QWebView *view = new QWebView();
-    view->load(QUrl(url));
+    view->load( QUrl(url) );
 
     //TODO: move this to JS.
-    view->setWindowModality(Qt::ApplicationModal);
+    view->setWindowModality( Qt::ApplicationModal );
 
-   m_resolver->d_func()->engine->mainFrame()->addToJavaScriptWindowObject(varName, view);
+   m_resolver->d_func()->engine->mainFrame()->addToJavaScriptWindowObject( varName, view );
 }
