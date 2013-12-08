@@ -71,13 +71,13 @@ public slots:
     virtual void tracks( const Tomahawk::collection_ptr& collection, const Tomahawk::album_ptr& album );
     // For UrlLookup
     virtual void lookupUrl( const QString& url );
-
+    QVariant executeJavascript(const QString& );
+    
 signals:
     void stopped();
 
 private slots:
     void onCollectionIconFetched();
-    QVariant executeJavascript(const QString& );
 
 private:
     void init();
