@@ -15,7 +15,7 @@
    along with Clementine.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "CloudStream.h"
+#include "TagParser.h"
 
 #include <QEventLoop>
 #include <QNetworkAccessManager>
@@ -66,7 +66,7 @@ namespace
 
 const static int MAX_ALLOW_ERROR_QUERY = 2;
 
-CloudStream::CloudStream( QUrl& url,
+TagParser::TagParser( QUrl& url,
                           const QString& filename,
                           const QString& fileId,
                           const long length,
@@ -87,7 +87,7 @@ CloudStream::CloudStream( QUrl& url,
     , m_scriptResolver( scriptResolver )
     , m_javascriptCallbackFunction( javascriptCallbackFunction )
     , m_currentBlocklength( 0 )
-    , m_cacheState( CloudStream::BeginningCache )
+    , m_cacheState( TagParser::BeginningCache )
     , m_tags( QVariantMap() )
 {
     m_network = Tomahawk::Utils::nam();
@@ -97,13 +97,13 @@ CloudStream::CloudStream( QUrl& url,
 }
 
 TagLib::FileName
-CloudStream::name() const
+TagParser::name() const
 {
     return m_encoded_filename.data();
 }
 
 bool
-CloudStream::CheckCache( int start, int end )
+TagParser::CheckCache( int start, int end )
 {
     for ( int i = start; i <= end; ++i ) {
         if ( !m_cache.test( i ) ) {
@@ -114,7 +114,7 @@ CloudStream::CheckCache( int start, int end )
 }
 
 void
-CloudStream::FillCache( uint start, TagLib::ByteVector data )
+TagParser::FillCache( uint start, TagLib::ByteVector data )
 {
     for ( uint i = 0; i < data.size(); ++i )
     {
@@ -123,7 +123,7 @@ CloudStream::FillCache( uint start, TagLib::ByteVector data )
 }
 
 TagLib::ByteVector
-CloudStream::GetCached( uint start, uint end )
+TagParser::GetCached( uint start, uint end )
 {
     const uint size = end - start + 1;
     TagLib::ByteVector ret( size );
@@ -135,7 +135,7 @@ CloudStream::GetCached( uint start, uint end )
 }
 
 void
-CloudStream::precache()
+TagParser::precache()
 {
     // For reading the tags of an MP3, TagLib tends to request:
     // 1. The first 1024 bytes
@@ -152,23 +152,23 @@ CloudStream::precache()
 
     switch( m_cacheState )
     {
-        case CloudStream::BeginningCache :
+        case TagParser::BeginningCache :
         {
             seek( 0, TagLib::IOStream::Beginning );
             readBlock( kTaglibPrefixCacheBytes );
-            m_cacheState = CloudStream::EndCache;
+            m_cacheState = TagParser::EndCache;
             break;
         }
 
-        case CloudStream::EndCache :
+        case TagParser::EndCache :
         {
             seek( kTaglibSuffixCacheBytes, TagLib::IOStream::End );
             readBlock( kTaglibSuffixCacheBytes );
-            m_cacheState = CloudStream::EndCacheDone;
+            m_cacheState = TagParser::EndCacheDone;
             break;
         }
 
-        case CloudStream::EndCacheDone :
+        case TagParser::EndCacheDone :
         {
             clear();
             // construct the tag map
@@ -248,7 +248,7 @@ CloudStream::precache()
 }
 
 TagLib::ByteVector
-CloudStream::readBlock( ulong length )
+TagParser::readBlock( ulong length )
 {
     const uint start = m_cursor;
     const uint end = qMin( m_cursor + length - 1, m_length - 1 );
@@ -275,7 +275,7 @@ CloudStream::readBlock( ulong length )
 
     foreach ( const QString& headerName, m_headers.keys() )
     {
-        request.setRawHeader( headerName.toUtf8(), m_headers[headerName].toUtf8() );
+        request.setRawHeader( headerName.toUtf8(), m_headers[headerName].toString().toUtf8() );
     }
     request.setRawHeader( "Range", QString( "bytes=%1-%2" ).arg( start ).arg( end ).toUtf8() );
     request.setAttribute( QNetworkRequest::CacheLoadControlAttribute, QNetworkRequest::AlwaysNetwork );
@@ -301,7 +301,7 @@ CloudStream::readBlock( ulong length )
 
 
 void
-CloudStream::onRequestFinished()
+TagParser::onRequestFinished()
 {
     m_reply->deleteLater();
 
@@ -312,7 +312,7 @@ CloudStream::onRequestFinished()
     if ( code != 206 )
     {
         m_num_requests_in_error++;
-        tDebug( LOGINFO ) << "#### Cloudstream : Error " << code << " retrieving url to tag for " << m_filename;
+        tDebug( LOGINFO ) << "#### TagParser : Error " << code << " retrieving url to tag for " << m_filename;
 
         //return TagLib::ByteVector();
         precache();
@@ -327,38 +327,38 @@ CloudStream::onRequestFinished()
 }
 
 void
-CloudStream::writeBlock( const TagLib::ByteVector& )
+TagParser::writeBlock( const TagLib::ByteVector& )
 {
     tDebug( LOGINFO ) << "writeBlock not implemented";
 }
 
 void
-CloudStream::insert( const TagLib::ByteVector&, ulong, ulong )
+TagParser::insert( const TagLib::ByteVector&, ulong, ulong )
 {
     tDebug( LOGINFO ) << "insert not implemented";
 }
 
 void
-CloudStream::removeBlock( ulong, ulong )
+TagParser::removeBlock( ulong, ulong )
 {
     tDebug( LOGINFO ) << "removeBlock not implemented";
 }
 
 bool
-CloudStream::readOnly() const
+TagParser::readOnly() const
 {
     tDebug( LOGINFO ) << "readOnly not implemented";
     return true;
 }
 
 bool
-CloudStream::isOpen() const
+TagParser::isOpen() const
 {
     return true;
 }
 
 void
-CloudStream::seek( long offset, TagLib::IOStream::Position p )
+TagParser::seek( long offset, TagLib::IOStream::Position p )
 {
     switch ( p )
     {
@@ -378,35 +378,35 @@ CloudStream::seek( long offset, TagLib::IOStream::Position p )
 }
 
 void
-CloudStream::clear()
+TagParser::clear()
 {
     m_cursor = 0;
 }
 
 long
-CloudStream::tell() const
+TagParser::tell() const
 {
     return m_cursor;
 }
 
 long
-CloudStream::length()
+TagParser::length()
 {
     return m_length;
 }
 
 void
-CloudStream::truncate( long )
+TagParser::truncate( long )
 {
     tDebug( LOGINFO ) << "not implemented";
 }
 
 void
-CloudStream::SSLErrors( const QList<QSslError>& errors )
+TagParser::SSLErrors( const QList<QSslError>& errors )
 {
     foreach ( const QSslError& error, errors )
     {
-        tDebug( LOGINFO ) << "#### Cloudstream : Error for " << m_filename << " : ";
+        tDebug( LOGINFO ) << "#### TagParser : Error for " << m_filename << " : ";
         tDebug( LOGINFO ) << error.error() << error.errorString();
         tDebug( LOGINFO ) << error.certificate();
     }

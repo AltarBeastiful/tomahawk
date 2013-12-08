@@ -32,11 +32,11 @@ class QNetworkAccessManager;
 class JSResolver;
 class QNetworkReply;
 
-class CloudStream : public QObject, public TagLib::IOStream
+class TagParser : public QObject, public TagLib::IOStream
 {
     Q_OBJECT
 public:
-    CloudStream( QUrl& url,
+    TagParser( QUrl& url,
                  const QString& filename,
                  const QString& fileId,
                  const long length,

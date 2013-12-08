@@ -30,7 +30,7 @@
 #include "utils/Closure.h"
 #include "utils/NetworkAccessManager.h"
 #include "utils/Logger.h"
-#include "utils/CloudStream.h"
+#include "utils/TagParser.h"
 
 #include "config.h"
 #include "JSResolver_p.h"
@@ -557,7 +557,7 @@ JSResolverHelper::returnStreamUrl( const QString& streamUrl,
 
 
 void
-JSResolverHelper::readCloudFile( const QString& fileName, const QString& fileId,
+JSResolverHelper::parseTagsFromStream( const QString& fileName, const QString& fileId,
                                       const QString& sizeS, const QString& mime_type,
                                       const QVariant& requestJS, const QString& javascriptCallbackFunction )
 {
@@ -583,7 +583,7 @@ JSResolverHelper::readCloudFile( const QString& fileName, const QString& fileId,
 
     tDebug( LOGINFO ) << "Indexing " << fileName << " from " << download_url.host();
 
-    CloudStream* stream = new CloudStream( download_url, fileName, fileId, size,
+    TagParser* stream = new TagParser( download_url, fileName, fileId, size,
                                            mime_type, headers, m_resolver, javascriptCallbackFunction );
 
     connect( stream, SIGNAL( tagsReady(QVariantMap &, const QString& ) ), this, SLOT( onTagReady( QVariantMap&, const QString& ) ) );

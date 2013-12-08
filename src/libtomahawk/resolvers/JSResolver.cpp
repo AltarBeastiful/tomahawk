@@ -29,7 +29,7 @@
 #include "utils/Logger.h"
 #include "utils/NetworkAccessManager.h"
 #include "utils/TomahawkUtilsGui.h"
-#include "utils/CloudStream.h"
+#include "utils/TagParser.h"
 
 #include "Artist.h"
 #include "Album.h"

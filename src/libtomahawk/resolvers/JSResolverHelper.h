@@ -50,7 +50,7 @@ public:
     Q_INVOKABLE QByteArray base64Encode( const QByteArray& input );
     Q_INVOKABLE QByteArray base64Decode( const QByteArray& input );
 
-    Q_INVOKABLE void readCloudFile( const QString& fileName, const QString& fileId, const QString& sizeS,
+    Q_INVOKABLE void parseTagsFromStream( const QString& fileName, const QString& fileId, const QString& sizeS,
                        const QString& mime_type, const QVariant& requestJS, const QString& javascriptCallbackFunction );
 
     Q_INVOKABLE void requestWebView( const QString& varName, const QString& url );
