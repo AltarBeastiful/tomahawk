@@ -314,7 +314,6 @@ TagParser::onRequestFinished()
         m_num_requests_in_error++;
         tDebug( LOGINFO ) << "#### TagParser : Error " << code << " retrieving url to tag for " << m_filename;
 
-        //return TagLib::ByteVector();
         precache();
         return ;
     }
