@@ -34,6 +34,7 @@
 #include "MsgProcessor.h"
 #include "Result.h"
 #include "SourceList.h"
+#include "Track.h"
 
 #include <boost/bind.hpp>
 #include <boost/function.hpp>

@@ -25,6 +25,7 @@
 
 #include "Album.h"
 #include "Artist.h"
+#include "Track.h"
 #include "Query.h"
 #include "Result.h"
 #include "Typedefs.h"
