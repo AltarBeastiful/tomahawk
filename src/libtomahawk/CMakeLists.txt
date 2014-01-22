@@ -132,6 +132,9 @@ set( libGuiSources
     utils/NetworkProxyFactory.cpp
     utils/NetworkAccessManager.cpp
     utils/ShortLinkHelper.cpp
+    utils/VorbisConverter.cpp
+    utils/vorbiswriter/Writer.cpp
+    utils/vorbiswriter/VorbisWriter.cpp
 
     widgets/AnimatedCounterLabel.cpp
     widgets/AnimatedSplitter.cpp
@@ -415,6 +418,7 @@ include_directories(
     ${QJSON_INCLUDE_DIR}
     ${ECHONEST_INCLUDE_DIR}
     ${CLUCENE_INCLUDE_DIRS}
+    ${OGGVORBIS_INCLUDE_DIR}
     ${PHONON_INCLUDES}
     ${Boost_INCLUDE_DIR}
 
@@ -537,6 +541,7 @@ TARGET_LINK_LIBRARIES( tomahawklib
     ${TAGLIB_LIBRARIES}
     ${CLUCENE_LIBRARIES}
     ${ECHONEST_LIBRARIES}
+    ${OGGVORBIS_LIBRARIES}
     ${QT_QTSQL_LIBRARY}
     ${QT_QTUITOOLS_LIBRARY}
     ${QT_QTGUI_LIBRARY}

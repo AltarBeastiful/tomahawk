@@ -25,6 +25,9 @@
 #include "network/ControlConnection.h"
 #include "network/Servent.h"
 #include "utils/Logger.h"
+#include "utils/VorbisConverter.h"
+
+#define BITRATE_THRESHOLD 350
 
 #include "BufferIoDevice.h"
 #include "Msg.h"
@@ -59,6 +62,9 @@ StreamConnection::StreamConnection( Servent* s, ControlConnection* cc, QString f
     m_iodev = QSharedPointer<QIODevice>( bio, &QObject::deleteLater ); // device audio data gets written to
     m_iodev->open( QIODevice::ReadWrite );
 
+    m_test = new QFile("test3.ogg");
+    m_test->open(QIODevice::ReadWrite);
+
     Servent::instance()->registerStreamConnection( this );
 
     // if the audioengine closes the iodev (skip/stop/etc) then kill the connection
@@ -85,6 +91,9 @@ StreamConnection::StreamConnection( Servent* s, ControlConnection* cc, QString f
     , m_allok( false )
     , m_transferRate( 0 )
 {
+    m_test = new QFile("test3.ogg");
+    m_test->open(QIODevice::ReadWrite);
+
     Servent::instance()->registerStreamConnection( this );
     // auto delete when connection closes:
     connect( this, SIGNAL( finished() ), SLOT( deleteLater() ), Qt::QueuedConnection );
@@ -105,7 +114,6 @@ StreamConnection::~StreamConnection()
         if ( !m_iodev.isNull() )
             ((BufferIODevice*)m_iodev.data())->inputComplete();
     }
-
     Servent::instance()->onStreamFinished( this );
 }
 
@@ -185,6 +193,15 @@ StreamConnection::startSending( const Tomahawk::result_ptr& result )
     }
 
     m_result = result;
+
+    m_result->setToConvert( (m_result->bitrate() >= BITRATE_THRESHOLD) );
+    if( m_result->bitrate() >= BITRATE_THRESHOLD )
+    {
+        m_result->setBitrate(VorbisConverter::outputBitrate());
+        m_result->setMimetype("application/ogg");
+        m_result->setSize(VorbisConverter::convertedSize(m_result->track()->duration()));
+    }
+
     qDebug() << "Starting to transmit" << m_result->url();
 
     boost::function< void ( QSharedPointer< QIODevice >& ) > callback =
@@ -242,6 +259,7 @@ StreamConnection::handleMsg( msg_ptr msg )
     {
         m_badded += msg->payload().length() - 4;
         ( (BufferIODevice*)m_iodev.data() )->addData( m_curBlock++, msg->payload().mid( 4 ) );
+        m_test->write(msg->payload().mid( 4 ));
     }
 
     //qDebug() << Q_FUNC_INFO << "flags" << (int) msg->flags()
@@ -256,6 +274,8 @@ StreamConnection::handleMsg( msg_ptr msg )
         ( (BufferIODevice*)m_iodev.data() )->inputComplete();
 
         shutdown();
+        
+        m_test->close();
     }
 }
 
@@ -274,12 +294,33 @@ StreamConnection::sendSome()
     Q_ASSERT( m_type == StreamConnection::SENDING );
 
     QByteArray ba = "data";
+    //tDebug() << "Bytes available : " << m_readdev->bytesAvailable() << "trying to read : " << BufferIODevice::blockSize();
+    qint64 bytesAvailable = m_readdev->bytesAvailable();
+//    char* temp = new char[BufferIODevice::blockSize()];
+//    qint64 len = m_readdev->read(temp, BufferIODevice::blockSize());
+//    ba.append(temp, len);
+
     ba.append( m_readdev->read( BufferIODevice::blockSize() ) );
+
+    if( ba.size() <= 4 && !m_readdev->atEnd() )
+    {
+        tDebug() << "No bytes! only : " << bytesAvailable << "and pos : " << m_readdev->pos();
+        QTimer::singleShot( 200, this, SLOT( sendSome() ) );
+        return;
+    }
+//    tDebug() << "Read from convert : " << len;
+//    tDebug() << "sending some data " << ba.length();
+
+//    m_test->write(temp, len);
+    m_test->write(ba.mid(4));
+
     m_bsent += ba.length() - 4;
 
     if ( m_readdev->atEnd() )
     {
+        tDebug() <<"Sending last message";
         sendMsg( Msg::factory( ba, Msg::RAW ) );
+        m_test->close();
         return;
     }
     else

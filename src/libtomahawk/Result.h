@@ -88,6 +88,7 @@ public:
     unsigned int bitrate() const;
     unsigned int size() const;
     unsigned int modificationTime() const;
+    bool toConvert() const { return m_toConvert; }
 
     void setScore( float score );
     void setFileId( unsigned int id );
@@ -101,6 +102,7 @@ public:
     void setBitrate( unsigned int bitrate );
     void setSize( unsigned int size );
     void setModificationTime( unsigned int modtime );
+    void setToConvert( bool toConvert ) { m_toConvert = toConvert; }
 
     void setTrack( const track_ptr& track );
 
@@ -146,6 +148,7 @@ private:
 
     unsigned int m_fileId;
 
+    bool m_toConvert;
     track_ptr m_track;
     query_wptr m_query;
 };

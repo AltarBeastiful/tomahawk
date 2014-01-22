@@ -271,6 +271,9 @@ macro_log_feature(QTWEETLIB_FOUND "QTweetLib" "Qt Twitter Library" "https://gith
 macro_optional_find_package(LibLastFm 1.0.0)
 macro_log_feature(LIBLASTFM_FOUND "liblastfm" "Qt library for the Last.fm webservices" "https://github.com/lastfm/liblastfm" TRUE "" "liblastfm is needed for scrobbling tracks to Last.fm and fetching cover artwork")
 
+macro_optional_find_package(OggVorbis)
+macro_log_feature(OGGVORBIS_FOUND "libvorbis" "OggVorbis" "Libraries for Ogg Vorbis general audio compression codec" "http://www.xiph.org" FALSE "" "Required for the AudioCD Ogg Vorbis plugin.")
+
 if( NOT APPLE )
 if( TOMAHAWK_QT5 )
     macro_optional_find_package(Qt5Keychain 0.1.0)

@@ -129,6 +129,7 @@ public:
     void remoteIODeviceFactory( const Tomahawk::result_ptr& result, boost::function< void ( QSharedPointer< QIODevice >& ) > callback );
     void localFileIODeviceFactory( const Tomahawk::result_ptr& result, boost::function< void ( QSharedPointer< QIODevice >& ) > callback );
     void httpIODeviceFactory( const Tomahawk::result_ptr& result, boost::function< void ( QSharedPointer< QIODevice >& ) > callback );
+    void convertLocalFileIODeviceFactory( const Tomahawk::result_ptr &result, boost::function<void (QSharedPointer<QIODevice> &)> callback );
 
     bool isReady() const;
 
