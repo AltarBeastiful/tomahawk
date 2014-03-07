@@ -237,7 +237,7 @@ macro_log_feature(CLucene_FOUND "CLucene" "The open-source, C++ search engine" "
 macro_optional_find_package(QJSON 0.8.1)
 macro_log_feature(QJSON_FOUND "QJson" "Qt library that maps JSON data to QVariant objects" "http://qjson.sf.net" TRUE "" "libqjson is used for encoding communication between Tomahawk instances")
 
-macro_optional_find_package(Taglib 1.6.0)
+macro_optional_find_package(Taglib 1.8.0)
 macro_log_feature(TAGLIB_FOUND "TagLib" "Audio Meta-Data Library" "http://developer.kde.org/~wheeler/taglib.html" TRUE "" "taglib is needed for reading meta data from audio files")
 include( CheckTagLibFileName )
 check_taglib_filename( COMPLEX_TAGLIB_FILENAME )

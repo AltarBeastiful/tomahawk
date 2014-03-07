@@ -52,6 +52,9 @@ public:
     Q_INVOKABLE QByteArray base64Encode( const QByteArray& input );
     Q_INVOKABLE QByteArray base64Decode( const QByteArray& input );
 
+    Q_INVOKABLE void parseTagsFromStream( const QString& fileName, const QString& fileId, const QString& sizeS,
+                       const QString& mime_type, const QVariant& requestJS, const QString& javascriptCallbackFunction );
+
     void customIODeviceFactory( const Tomahawk::result_ptr&, const QString& url,
                                 boost::function< void( QSharedPointer< QIODevice >& ) > callback ); // async
     void customUrlTranslator( const Tomahawk::result_ptr&, const QString& url,
@@ -82,6 +85,7 @@ public slots:
 private slots:
     void tracksAdded( const QList<Tomahawk::query_ptr>& tracks, const Tomahawk::ModelMode, const Tomahawk::collection_ptr& collection );
     void pltemplateTracksLoadedForUrl( const QString& url, const Tomahawk::playlisttemplate_ptr& pltemplate );
+    void onTagReady(QVariantMap &tags, const QString&);
 
 private:
     Tomahawk::query_ptr parseTrack( const QVariantMap& track );
